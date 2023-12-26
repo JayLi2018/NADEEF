@@ -16,7 +16,7 @@ package qa.qcri.nadeef.core.utils.sql;
 import com.google.common.base.Preconditions;
 import org.stringtemplate.v4.ST;
 import org.stringtemplate.v4.STGroupFile;
-
+import qa.qcri.nadeef.tools.Logger;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -26,6 +26,7 @@ import java.sql.Statement;
  * Database manager for Apache Derby database.
  */
 public class MySQLDialect extends SQLDialectBase {
+    private static Logger logger = Logger.getLogger(SQLDialectBase.class);
     public static STGroupFile template =
         new STGroupFile(
             "qa*qcri*nadeef*core*utils*sql*template*MySQLTemplate.stg".replace(
@@ -109,6 +110,7 @@ public class MySQLDialect extends SQLDialectBase {
         }
 
         ST st = template.getInstanceOf("CreateTableFromCSV");
+        logger.error("st is " + st);
         st.add("tableName", tableName);
         st.add("content", sqlBuilder.toString());
         return st.render();

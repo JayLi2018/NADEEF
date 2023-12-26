@@ -49,6 +49,7 @@ import java.util.concurrent.TimeUnit;
 public class Console {
 
     //<editor-fold desc="Private fields">
+    private static Logger logger = Logger.getLogger(Console.class);
     private static final String logo =
         "   _  __        __        _____\n" +
         "  / |/ /__ ____/ /__ ___ /   _/\n" +
@@ -125,13 +126,49 @@ public class Console {
             executor.repair();
         }
     }
-
     //</editor-fold>
     /**
      * Start of Console.
      * @param args user input.
      */
     public static void main(String[] args) {
+        logger.error("args length: "+ args.length);
+        try{
+            for (int i = 0; i < args.length; i++) {
+        logger.error("Argument " + (i + 1) + ": " + args[i]);
+        }
+        Stopwatch stopwatch = Stopwatch.createStarted();
+        Bootstrap.start();
+        console = new ConsoleReader();
+        PerfReport.clear();
+        try {
+            String planname = args[0];
+            no_interaction(planname);
+
+        } catch (Exception ex) {
+            console.println(
+                "Oops, something is wrong. Please check the log in the output dir."
+            );
+
+            tracer.error("", ex);
+        }
+        }catch (Exception ex) {
+            try {
+                tracer.error("Bootstrap failed", ex);
+            } catch (Exception ignore) {}
+        } finally {
+            Bootstrap.shutdown();
+        }
+        System.exit(0);
+    }
+    
+
+    //</editor-fold>
+    /**
+     * Start of Console.
+     * @param args user input.
+     */
+    public static void main_2(String[] args) {
         try {
             // bootstrap Nadeef.
             Stopwatch stopwatch = Stopwatch.createStarted();
@@ -209,6 +246,45 @@ public class Console {
         System.exit(0);
     }
 
+    private static void load_non_interactive(String cmdLine) throws IOException {
+        Stopwatch stopwatch = Stopwatch.createStarted();
+        String[] splits = cmdLine.split("\\s");
+        // if (splits.length != 2) {
+        //     console.println("Invalid load command. Run load <Nadeef config file>.");
+        //     return;
+        // }
+        String fileName = cmdLine;
+        File file = CommonTools.getFile(fileName);
+
+        // shutdown existing executors
+        for (CleanExecutor executor : executors) {
+            executor.shutdown();
+        }
+        executors.clear();
+
+        FileReader reader = null;
+        try {
+            reader = new FileReader(file);
+            DBConfig dbConfig = NadeefConfiguration.getDbConfig();
+            cleanPlans = CleanPlan.create(reader, dbConfig);
+            for (CleanPlan cleanPlan : cleanPlans) {
+                executors.add(new CleanExecutor(cleanPlan, dbConfig));
+            }
+        } catch (Exception ex) {
+            tracer.error("Loading CleanPlan failed.", ex);
+            return;
+        } finally {
+            if (reader != null)
+                reader.close();
+        }
+
+        console.println(
+            cleanPlans.size()
+                + " rules loaded in "
+                + stopwatch.elapsed(TimeUnit.MILLISECONDS) + " ms."
+        );
+        stopwatch.stop();
+    }
     private static void load(String cmdLine) throws IOException {
         Stopwatch stopwatch = Stopwatch.createStarted();
         String[] splits = cmdLine.split("\\s");
@@ -282,9 +358,12 @@ public class Console {
     private static void list() throws IOException {
         if (cleanPlans == null) {
             console.println("There is no rule loaded.");
+            logger.error("There is no rule loaded.");
+
             return;
         }
 
+        logger.error("There are " + cleanPlans.size() + " rules loaded.");
         console.println("There are " + cleanPlans.size() + " rules loaded.");
         for (int i = 0; i < cleanPlans.size(); i ++) {
             console.println("\t" + i + ": " + cleanPlans.get(i).getRule().getRuleName());
@@ -532,4 +611,18 @@ public class Console {
         console.flush();
     }
     //</editor-fold>
-}
+
+    private static void no_interaction(String loadfile){
+        try{
+            load_non_interactive(loadfile);
+            logger.error("loaded file");
+            list();
+            detect("");
+            logger.error("detected errors");
+            repair("");
+            logger.error("repaired");
+            } catch (Exception ex) {
+                tracer.error("", ex);
+            }
+        }
+    }

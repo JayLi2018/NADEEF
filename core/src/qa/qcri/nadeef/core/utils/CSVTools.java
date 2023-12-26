@@ -186,6 +186,8 @@ public class CSVTools {
         Stopwatch stopwatch = Stopwatch.createStarted();
         String fullTableName = null;
         String sql;
+        logger.error("test if the logger is actually working...");
+        logger.error("file name: " + file);
         try (BufferedReader reader = new BufferedReader(new FileReader(file))){
             // overwrites existing tables if necessary
             fullTableName = "TB_" + tableName;
@@ -209,7 +211,7 @@ public class CSVTools {
                     }
 
                     sql = dialectManager.createTableFromCSV(fullTableName, schema);
-                    logger.fine(sql);
+                    logger.error(sql);
                     stat.execute(sql);
                     logger.info("Successfully created table " + fullTableName);
                 } finally {

@@ -1,6 +1,6 @@
 #!/bin/bash
 export BuildVersion='1.0.1019'
-
+JAVA_ARGS="-Djava.util.logging.ConsoleHandler.level=FINE"
 type -P javac > /dev/null 2>&1 || { echo "JDK cannot be found, please check your PATH var."; exit 1; }
  
 function run_console()
@@ -12,6 +12,13 @@ function run_console()
 function run_dashboard()
 {
   cmd="java $JAVA_ARGS -cp out/bin/*:. qa.qcri.nadeef.web.NadeefStart"
+  exec $cmd
+}
+
+function run_non_interactive_console()
+{
+  echo "we in non interactive mode"
+  cmd="java $JAVA_ARGS -cp out/bin/*:examples/:out/test qa.qcri.nadeef.console.Console $1"
   exec $cmd
 }
 
@@ -31,7 +38,8 @@ else
             echo 'Environment variables considered: JAVA_ARGS. Example: JAVA_ARGS="-Xmx15G"'
         fi
     else
-      run_console
+      run_non_interactive_console "$2"
     fi
 fi
 
+java -Djava.util.logging.ConsoleHandler.level=FINE -cp out/bin/*:examples/:out/test qa.qcri.nadeef.console.Console

@@ -1,0 +1,19 @@
+{
+    "source" : {
+        "type" : "csv",
+        "file" : [
+            "./examples/inctest.csv"
+        ]
+    },
+    "rule" : [
+        {
+            "type" : "fd",
+            "value" : ["c | b"]
+        },
+        {
+            "type" : "fd",
+            "value" : ["a | c"]
+        }
+    ]
+
+}
